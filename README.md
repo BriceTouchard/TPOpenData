@@ -16,10 +16,10 @@
 Une librairie de transfert de fichier multiprotocol, wrappée par CPR.
 
 ### curlpp
-Un wrapper de libcurl qui permet de créer des requêtes http simplement. Doc : 
+Un wrapper de libcurl qui permet de créer des requêtes http simplement. Doc : http://www.curlpp.org/
 
 ### Json for modern C++ (JSON nlohmann)
-Permet de faciliter la manipulation des données JSON. Doc : http://www.curlpp.org/
+Permet de faciliter la manipulation des données JSON. Doc : https://json.nlohmann.me/
 
 ### LibGD 
 Pour la création de graphes au format image. Doc : https://libgd.github.io/ 
