@@ -13,7 +13,7 @@
 
 ## Composants
 ### libcurl 
-Une librairie de transfert de fichier multiprotocol, wrappée par CPR.
+Une librairie de transfert de fichier multiprotocol, wrappée par curlpp.
 
 ### curlpp
 Un wrapper de libcurl qui permet de créer des requêtes http simplement. Doc : http://www.curlpp.org/
