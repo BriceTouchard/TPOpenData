@@ -24,6 +24,9 @@ Permet de faciliter la manipulation des données JSON. Doc : https://json.nlohma
 ### LibGD 
 Pour la création de graphes au format image. Doc : https://libgd.github.io/ 
 
+### Boost
+Référentiel complémentaire à la bibliothèque standard C++. Utilisation de l'adaptator reverse.
+
 ## Les différents états
 On note Q le débit et H la hauteur d'eau mesurés.
 
