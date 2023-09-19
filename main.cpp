@@ -23,6 +23,19 @@ using namespace curlpp::options;
 
 string urlBase = "https://hubeau.eaufrance.fr/api/v1/hydrometrie/";
 
+// Dimensions du graphe
+int imgsizeX = 800;
+int imgsizeY = 600;
+int barWidth = 50;
+int marginX = 100;
+int marginY = 100;
+int spacing = 10;
+
+int i = 0;
+int h, hMax, hMin, ecart;
+float coeff;
+string grandeur_hydro;
+
 string request(string url){
     string respStr;
     try
@@ -47,23 +60,8 @@ string request(string url){
     return respStr;
 }
 
-void parse(string respStr, string param, string type){
-    json j = json::parse(respStr);
-    auto &results = j["data"];
-    for(auto &result : results) {
-        if(type == "string"){
-            cout << param << " = " << result[param].get<string>() << endl;
-        }else if(type == "float"){
-            cout << param << " = " << result[param] << endl;
-        }else{
-            cout << param << " = " << result[param] << endl;
-        }
-    }
-}
-
-int y(int imgsizeY, int marginY, int hMin, int hMax, int h, int coeff){
-    int ecart = hMax - hMin;
-    int y = imgsizeY-marginY-(h-hMin+ecart/3)*coeff;
+int y(int val){
+    int y = imgsizeY-marginY-(val-hMin+ecart/3)*coeff;
     return y;
 }
 
@@ -76,51 +74,63 @@ unsigned char* floatToUcEtoile(float f){
     return ucEtoile;
 }
 
+void dessinHistogramme(json resultsObs, gdImagePtr im, int* colors){
+    for (json &result : boost::adaptors::reverse(resultsObs)){   // la requête sort dans l'ordre anti-chronologique, donc on inverse
+        h = static_cast<int>(result["resultat_obs"]);
+        if(grandeur_hydro == "Q") h=h/100; // conversion en m³/s
+        cout << "Hauteur = " << result["resultat_obs"] << " | Date et heure  = " << result["date_obs"].get<string>() << endl;
+
+        // Dessin des barres de l'histogramme
+        int x = marginX+(barWidth+spacing)*i;
+        gdImageFilledRectangle(im,x,imgsizeY-marginY,x+barWidth,y(h),colors[2]);
+
+        // Formattage de la grandeur (H ou Q) et des heures
+        string dateStr = result["date_obs"].get<string>();
+        for (int i = 0; i < 4; ++i) { // On ôte les secondes (":00Z")
+            dateStr.pop_back();
+        }
+        string heure = dateStr.substr(11); // conserve l'heure au format hh:mm
+        string resObsStr = to_string(result["resultat_obs"]); // float to string
+        if(grandeur_hydro == "H"){
+            for (int i = 0; i < 2; ++i) resObsStr.pop_back(); // On ôte le ".0"" la décimale est toujours nulle
+        }else if (grandeur_hydro == "Q"){
+            for (int i = 0; i < 4; ++i) resObsStr.pop_back(); // On ôte le "00.0"" la décimale est toujours nulle et on passe en m³/s
+        }
+        // Affichage des hauteurs (en mm) puis des heures (hh:mm)
+        int lengthH = resObsStr.length();
+        gdImageString(im,gdFontGetGiant (),x+(27-lengthH*5),y(h)-16,(unsigned char*) resObsStr.c_str(),colors[1]);
+        gdImageString(im,gdFontGetGiant (),x+5,imgsizeY-marginY+5,(unsigned char*) heure.c_str(),colors[1]);
+        i++;
+    }
+}
+
 int main(int argc, char *argv[])
 {
-    // Codes des stations en hauts-de-france (32)
-//  urlBase + "referentiel/stations?fields=code_station&code_region=32");
+    // Message à l'utilisateur s'il a oublié un ou plusieurs arguments
+    if(argc < 3) cout << "Veuillez saisir tous les arguments requis : grandeur souhaitée (H ou Q) et le code station. Exemple : H H208000104" << endl;
 
-    cout << "argv[1] = " << argv[1] << " | argv[2] = " << argv[2] << endl;
+    grandeur_hydro = argv[1];
+    string station = argv[2];
 
-    string grandeur_hydro = argv[1];
-    string station = argv[2]; // Creil (Oise) = H208000104
-
-//    string grandeur_hydro = "H";
-//    string station = "H208000104"; // Oise
-    unsigned char monTitre [] = "Hauteur d'eau de l'Oise a Creil";
-
-//    string station = "F700000103"; // Seine à Paris Austerlitz
-//    unsigned char monTitre [] = "Hauteur d'eau de la Seine à Paris Austerlitz";
-
-    // Dernière valeur de H de la station H208000104 à Creil
-//    string respStr1 = request(urlBase + "observations_tr?code_entite=H208000104&size=1&pretty=&grandeur_hydro=H&fields=date_obs,resultat_obs");
-//    string respStr2 = request(urlBase + "referentiel/stations?fields=code_station&code_region=32");
-    string respStr3 = request(urlBase + "observations_tr?code_entite=" + station + "&size=10&grandeur_hydro=" + grandeur_hydro + "&fields=date_obs,resultat_obs");
-
-//    parse(respStr1,"resultat_obs","float");
-//    parse(respStr2,"code_station","string");
-//    parse(respStr3,"resultat_obs","float");
-//    parse(respStr3,"date_obs","string");
+    // Requêtes HTTP GET
+    // 10 dernières valeurs de H ou Q pour une station donné
+    string respStrObs = request(urlBase + "observations_tr?code_entite=" + station + "&size=10&grandeur_hydro=" + grandeur_hydro + "&fields=date_obs,resultat_obs");
+    cout << endl;
+    // Libellé d'un site pour une station donnée
+    string respStrStation = request(urlBase + "referentiel/stations?code_station=" + station + "&fields=libelle_site");
 
     // Libgd
     gdImagePtr im;
     FILE *pngout;
 
-    int bckgrd, noir, bleu, vert;
-    int imgsizeX = 800;
-    int imgsizeY = 600;
-    int barWidth = 50;
-    int marginX = 100;
-    int marginY = 100;
-    int spacing = 10;
-    int i = 0;
     im = gdImageCreate(imgsizeX, imgsizeY);
 
+    int bckgrd, noir, bleu, vert;
     bckgrd = gdImageColorAllocate(im, 240, 240, 255);
     noir =   gdImageColorAllocate(im, 0, 0, 0);
     bleu =    gdImageColorAllocate(im, 50, 100, 255);
     vert =    gdImageColorAllocate(im, 50, 255, 50);
+    int colors[4] = {bckgrd, noir, bleu, vert};
 
     gdFontPtr fonts[5];
     fonts[0] = gdFontGetTiny ();
@@ -129,19 +139,35 @@ int main(int argc, char *argv[])
     fonts[3] = gdFontGetLarge ();
     fonts[4] = gdFontGetGiant ();
 
-    json j = json::parse(respStr3);
-    json &results = j["data"];
-    json j0 = results[0];
-    string date_obs = j0["date_obs"];
+    // Extraction des données (data)
+    json jObs = json::parse(respStrObs);
+    json jStations = json::parse(respStrStation);
 
+    json &resultsObs = jObs["data"];
+    json &resultsStations = jStations["data"];
+
+    if(resultsObs.empty()){
+        cout << endl;
+        cout << "Pas de données pour la grandeur hydrométrique sélectionnée. Veuillez choisir une autre station ou une autre grandeur." <<  endl;
+    }
+    // Extraction de la date d'observation
+    json jObs0 = resultsObs[0];
+    string date_obs = jObs0["date_obs"];
+
+    // Extraction du libellé du site
+    json jStation0 = resultsStations[0];
+    string libelle_site = jStation0["libelle_site"];
+
+    // Création du nom de fichier (fileName). Exemple : H_H208000104_2023-09-19T08:10:00Z.png
     string fileNameStr = grandeur_hydro + "_"  + station + "_" + date_obs + ".png";
     const char* fileName = fileNameStr.c_str();
 
-    // On détermine le shauteurs minimale et maximale, hMin et hMax, ainsi que l'écart entre les deux
-    // la requête sort dans l'ordre anti-chronologique, donc on inverse
-    int hMax, hMin, ecart;
-    for (json &result : boost::adaptors::reverse(results)){
-        int h = static_cast<int>(result["resultat_obs"]);
+    // On détermine les hauteurs minimale et maximale, hMin et hMax, ainsi que l'écart entre les deux
+    // la requête sort dans l'ordre chronologique descendant, donc on inverse avec l'adaptateur reverse de la librairie Boost
+
+    for (json &result : boost::adaptors::reverse(resultsObs)){
+        h = static_cast<int>(result["resultat_obs"]);
+        if(grandeur_hydro == "Q") h=h/100; // conversion en m³/s
         if(h > hMax){
             hMax = h;
         }else if(hMin == 0){
@@ -180,30 +206,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    int coeff = 300/ecart; // l'écart entre valeur min et valeur max s'affiche sur 300 px.
+    coeff = 300.0f/ecart; // l'écart entre valeur min et valeur max s'affiche sur 300 px.
 
     // Dessin du graphe
-    for (json &result : boost::adaptors::reverse(results)){   // la requête sort dans l'ordre anti-chronologique, donc on inverse
-        int h = static_cast<int>(result["resultat_obs"]);
-        cout << "Hauteur = " << result["resultat_obs"] << " | Date et heure  = " << result["date_obs"].get<string>() << endl;
-
-        // Dessin des barres de l'histogramme
-        int x = marginX+(barWidth+spacing)*i;
-        gdImageFilledRectangle(im,x,imgsizeY-marginY,x+barWidth,y(imgsizeY,marginY,hMin,hMax,h,coeff),bleu);
-
-        string dateStr = result["date_obs"].get<string>();
-        for (int i = 0; i < 4; ++i) { // On ôte les secondes (":00Z")
-            dateStr.pop_back();
-        }
-        string heure = dateStr.substr(11); // conserve l'heure au format hh:mm
-        string resObsStr = to_string(result["resultat_obs"]); // float to string
-        for (int i = 0; i < 2; ++i) resObsStr.pop_back(); // On ôte le ".0""  à la fin qui est inutile
-
-        // Affichage des hauteurs en mm puis des heures (hh:mm)
-        gdImageString(im,fonts[4],x+14,y(imgsizeY,marginY,hMin,hMax,h,coeff)-16,(unsigned char*) resObsStr.c_str(),noir);
-        gdImageString(im,fonts[4],x+5,imgsizeY-marginY+5,(unsigned char*) heure.c_str(),noir);
-        i++;
-    }
+    dessinHistogramme(resultsObs, im, colors);
 
     // Axe (abcisse et ordonnée)
     gdImageLine(im,marginX,imgsizeY-marginY,imgsizeX-marginX,imgsizeY-marginY,noir); // abcisse
@@ -214,8 +220,8 @@ int main(int argc, char *argv[])
     gdImageLine(im,marginX,marginY,marginX+6,marginY+8,noir); // trait flèche ordonnée 2
 
     // Ligne d'échelle min et max
-    int yMin =y(imgsizeY,marginY,hMin,hMax,scaleMin,coeff);
-    int yMax =y(imgsizeY,marginY,hMin,hMax,scaleMax,coeff);
+    int yMin =y(scaleMin);
+    int yMax =y(scaleMax);
     cout << "scaleMin = " << scaleMin << " | scaleMax = " << scaleMax << endl;
     cout << "yMin = " << yMin << " | yMax = " << yMax << endl;
 
@@ -232,17 +238,23 @@ int main(int argc, char *argv[])
     gdImageString(im,fonts[4], marginX-lengthScaleMax*15, yMax-10 , scaleMaxUc, noir);
 
     // Affichage du titre
-    unsigned char* titre = &monTitre[0];
-    int length = strlen((char*) titre);
-    gdImageString(im,fonts[4], imgsizeX/2-length*5, marginY/2, titre , noir);
+    unsigned char* titre = (unsigned char*) libelle_site.c_str();
+    int lengthTitre = strlen((char*) titre);
+    gdImageString(im,fonts[4], imgsizeX/2-lengthTitre*5, marginY/2, titre , noir);
+
+    unsigned char* grandeurDesc;
+    if(grandeur_hydro == "H"){
+        grandeurDesc = (unsigned char*) "Hauteur H en mm";
+    }else if(grandeur_hydro == "Q"){
+        grandeurDesc = (unsigned char*) "Debit Q en m3/s";
+    }
+    int lengthGrandeurDesc = strlen((char*) grandeurDesc);
+    gdImageString(im,fonts[4], imgsizeX/2-lengthGrandeurDesc*5, marginY/3, grandeurDesc , noir);
+
 
     // Affichage de la date
 
     string date_jour = date_obs.substr (0,10);
-
-//    unsigned char* titre = &monTitre[0];
-//    int length = strlen((char*) titre);
-//    unsigned char monTitre [] = "Hauteur d'eau de l'Oise a Creil";
 
     gdImageString(im,fonts[4], imgsizeX/2-date_jour.length()*6, imgsizeY-marginY/2, (unsigned char*) date_jour.c_str(), noir);
 
