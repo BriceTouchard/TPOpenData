@@ -61,8 +61,9 @@ void parse(string respStr, string param, string type){
     }
 }
 
-int y(int imgsizeY, int marginY, int hMin, int h, int coeff){
-    int y = imgsizeY-marginY-(h-hMin+20)*coeff;
+int y(int imgsizeY, int marginY, int hMin, int hMax, int h, int coeff){
+    int ecart = hMax - hMin;
+    int y = imgsizeY-marginY-(h-hMin+ecart/3)*coeff;
     return y;
 }
 
@@ -75,13 +76,18 @@ unsigned char* floatToUcEtoile(float f){
     return ucEtoile;
 }
 
-int main(int, char**)
+int main(int argc, char *argv[])
 {
     // Codes des stations en hauts-de-france (32)
 //  urlBase + "referentiel/stations?fields=code_station&code_region=32");
 
-    string grandeur_hydro = "H";
-    string station = "H208000104"; // Oise
+    cout << "argv[1] = " << argv[1] << " | argv[2] = " << argv[2] << endl;
+
+    string grandeur_hydro = argv[1];
+    string station = argv[2]; // Creil (Oise) = H208000104
+
+//    string grandeur_hydro = "H";
+//    string station = "H208000104"; // Oise
     unsigned char monTitre [] = "Hauteur d'eau de l'Oise a Creil";
 
 //    string station = "F700000103"; // Seine à Paris Austerlitz
@@ -153,23 +159,37 @@ int main(int, char**)
     hMinF = hMinF/100;
     hMaxF = hMaxF/100;
 
+    // ScaleMin
     if(round(hMinF) > floor(hMinF)){
         scaleMin = (floor(hMinF)+0.5)*100;
     } else if(round(hMinF) == floor(hMinF)){
         scaleMin = floor(hMinF)*100;
     }
-    scaleMax = round(hMaxF)*100;
+
+    // ScaleMax. Valeur arrrondie à 1000, 50 ou 25. Si l'écart on affiche une valeur exacte.
+    cout << "hMax = " << hMax << endl;
+    if(round(hMaxF) != floor(hMinF)){
+        scaleMax = round(hMaxF)*100;
+    }else{
+        if(ecart > 25 && ecart > 50){
+            scaleMax = scaleMin+50;
+        }else if(ecart > 12 && ecart < 25){
+            scaleMax = scaleMin+25;
+        }else if (ecart < 12) {
+            scaleMax = hMax;
+        }
+    }
 
     int coeff = 300/ecart; // l'écart entre valeur min et valeur max s'affiche sur 300 px.
 
-
+    // Dessin du graphe
     for (json &result : boost::adaptors::reverse(results)){   // la requête sort dans l'ordre anti-chronologique, donc on inverse
         int h = static_cast<int>(result["resultat_obs"]);
         cout << "Hauteur = " << result["resultat_obs"] << " | Date et heure  = " << result["date_obs"].get<string>() << endl;
 
         // Dessin des barres de l'histogramme
         int x = marginX+(barWidth+spacing)*i;
-        gdImageFilledRectangle(im,x,imgsizeY-marginY,x+barWidth,y(imgsizeY,marginY,hMin,h,coeff),bleu);
+        gdImageFilledRectangle(im,x,imgsizeY-marginY,x+barWidth,y(imgsizeY,marginY,hMin,hMax,h,coeff),bleu);
 
         string dateStr = result["date_obs"].get<string>();
         for (int i = 0; i < 4; ++i) { // On ôte les secondes (":00Z")
@@ -180,18 +200,25 @@ int main(int, char**)
         for (int i = 0; i < 2; ++i) resObsStr.pop_back(); // On ôte le ".0""  à la fin qui est inutile
 
         // Affichage des hauteurs en mm puis des heures (hh:mm)
-        gdImageString(im,fonts[4],x+14,y(imgsizeY,marginY,hMin,h,coeff)-16,(unsigned char*) resObsStr.c_str(),noir);
+        gdImageString(im,fonts[4],x+14,y(imgsizeY,marginY,hMin,hMax,h,coeff)-16,(unsigned char*) resObsStr.c_str(),noir);
         gdImageString(im,fonts[4],x+5,imgsizeY-marginY+5,(unsigned char*) heure.c_str(),noir);
         i++;
     }
 
     // Axe (abcisse et ordonnée)
-    gdImageLine(im,marginX,imgsizeY-marginY,imgsizeX-marginX,imgsizeY-marginY,noir);
-    gdImageLine(im,marginX,imgsizeY-marginY,marginX,marginY,noir);
+    gdImageLine(im,marginX,imgsizeY-marginY,imgsizeX-marginX,imgsizeY-marginY,noir); // abcisse
+    gdImageLine(im,marginX,imgsizeY-marginY*0.5,marginX,marginY,noir); // ordonnée
+    gdImageLine(im,imgsizeX-marginX,imgsizeY-marginY,imgsizeX-marginX-8,imgsizeY-marginY-6,noir); // trait flèche abcisse 1
+    gdImageLine(im,imgsizeX-marginX,imgsizeY-marginY,imgsizeX-marginX-8,imgsizeY-marginY+6,noir); // trait flèche abcisse 2
+    gdImageLine(im,marginX,marginY,marginX-6,marginY+8,noir); // trait flèche ordonnée 1
+    gdImageLine(im,marginX,marginY,marginX+6,marginY+8,noir); // trait flèche ordonnée 2
 
     // Ligne d'échelle min et max
-    int yMin =y(imgsizeY,marginY,hMin,scaleMin,coeff);
-    int yMax =y(imgsizeY,marginY,hMin,scaleMax,coeff);
+    int yMin =y(imgsizeY,marginY,hMin,hMax,scaleMin,coeff);
+    int yMax =y(imgsizeY,marginY,hMin,hMax,scaleMax,coeff);
+    cout << "scaleMin = " << scaleMin << " | scaleMax = " << scaleMax << endl;
+    cout << "yMin = " << yMin << " | yMax = " << yMax << endl;
+
     gdImageLine(im,marginX-5,yMin,marginX+5,yMin,noir);
     gdImageLine(im,marginX-5,yMax,marginX+5,yMax,noir);
 
@@ -204,15 +231,20 @@ int main(int, char**)
     int lengthScaleMax = strlen((char*) scaleMaxUc);
     gdImageString(im,fonts[4], marginX-lengthScaleMax*15, yMax-10 , scaleMaxUc, noir);
 
-
     // Affichage du titre
     unsigned char* titre = &monTitre[0];
     int length = strlen((char*) titre);
     gdImageString(im,fonts[4], imgsizeX/2-length*5, marginY/2, titre , noir);
 
     // Affichage de la date
-//    date_obs.substr();
-//    gdImageString(im,fonts[4], imgsizeX/2-length*5, marginY/2, titre , noir);
+
+    string date_jour = date_obs.substr (0,10);
+
+//    unsigned char* titre = &monTitre[0];
+//    int length = strlen((char*) titre);
+//    unsigned char monTitre [] = "Hauteur d'eau de l'Oise a Creil";
+
+    gdImageString(im,fonts[4], imgsizeX/2-date_jour.length()*6, imgsizeY-marginY/2, (unsigned char*) date_jour.c_str(), noir);
 
     pngout = fopen(fileName, "wb");
     gdImagePng(im, pngout);

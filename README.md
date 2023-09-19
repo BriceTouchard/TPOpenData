@@ -37,6 +37,7 @@ Graphiques d’état
 - 10 plus grands débits à l'instant t
 
 Graphique d’évolution
+- Histogramme des 10 dernières valeurs de Q ou H pour un station donnée.
 - Courbe d'évolution sur 1 mois de Q et H d’un ou plusieurs cours d'eau (ou histogramme)
 
 Graphiques statistiques en France, par régions ou par départements
@@ -45,4 +46,19 @@ Graphiques statistiques en France, par régions ou par départements
 - Idem pour les 10 plus petits
 - Camembert : pourcentage du débit total de chaque fleuve. Par exemple 10% Loire, 7% Seine (…) 12% autres.
 - Affichage de Q et H moyen par région et département (affichage simultanée de toutes les régions ou départements)
+
+## Jeu de données
+### Code stations
+Liste non-exhaustive, il y a 5810 stations dans le référentiel.
+
+| Libelle site                           |    Code    | Region | Département |
+|----------------------------------------|------------|--------|-------------|
+|L'Oise à Creil et à Pont-Sainte-Maxence | H208000104 |   32   |     60      |
+| La Seine à Paris			 | F700000103 |   11   |     75      |
+
+
+
+
+
+
 
