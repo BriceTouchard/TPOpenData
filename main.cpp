@@ -61,7 +61,7 @@ string request(string url){
 }
 
 int y(int val){
-    int y = imgsizeY-marginY-(val-hMin+ecart/3)*coeff;
+    int y = imgsizeY-marginY-(val-hMin+ecart/5)*coeff;
     return y;
 }
 
@@ -119,6 +119,13 @@ int main(int argc, char *argv[])
     // Libellé d'un site pour une station donnée
     string respStrStation = request(urlBase + "referentiel/stations?code_station=" + station + "&fields=libelle_site");
 
+    // Liste des code stations d'une région
+    string code_region = "32"; // Hauts-de-France
+    string reqCodesByRegion = request(urlBase + "referentiel/stations?fields=code_station&code_region=" + code_region);
+
+    cout << endl;
+    cout << "reqCodesByRegion = " << reqCodesByRegion << endl;
+
     // Libgd
     gdImagePtr im;
     FILE *pngout;
@@ -142,9 +149,21 @@ int main(int argc, char *argv[])
     // Extraction des données (data)
     json jObs = json::parse(respStrObs);
     json jStations = json::parse(respStrStation);
+    json jCodesByRegion = json::parse(reqCodesByRegion);
 
     json &resultsObs = jObs["data"];
     json &resultsStations = jStations["data"];
+    json &resCodesByRegion = jCodesByRegion["data"];
+
+    // Get de la dernière valeur de H pour chaque station des hauts-de-france
+    cout << endl;
+    cout << "code station = " << endl;
+    for (json &res : resCodesByRegion) {
+//        cout << res["code_station"].get<string>() << ", ";
+//        string reqVal = request(urlBase + "observations_tr?code_entite=" + res["code_station"].get<string>() + "&size=1&grandeur_hydro=H&fields=resultat_obs");
+
+    }
+    cout << endl;
 
     if(resultsObs.empty()){
         cout << endl;
@@ -170,13 +189,16 @@ int main(int argc, char *argv[])
         if(grandeur_hydro == "Q") h=h/100; // conversion en m³/s
         if(h > hMax){
             hMax = h;
-        }else if(hMin == 0){
+        }
+        if(hMin == 0){
             hMin = h;
         }else if(h <  hMin){
             hMin = h;
-        }
+        }        
     }
+    cout << "hMin = " << hMin << endl;
     ecart = hMax - hMin;
+    coeff = 300.0f/ecart; // l'écart entre valeur min et valeur max s'affiche sur 300 px.
 
     // On calcule les valeurs d'échelle min et max, respectivement scaleMin et scaleMax
     float scaleMin, scaleMax;
@@ -191,9 +213,16 @@ int main(int argc, char *argv[])
     } else if(round(hMinF) == floor(hMinF)){
         scaleMin = floor(hMinF)*100;
     }
+    cout << "scaleMin = " << scaleMin << endl;
+    if(y(scaleMin) > imgsizeY){ // Si avec la valeur minimale arrondie on est hors cadre, on n'arrondi pas
+        scaleMin = hMin;
+    }
+    cout << "scaleMin = " << scaleMin << endl;
+    cout << "y(scaleMin) = " << y(scaleMin) << " | imgSizeY = " << imgsizeY << endl;
 
-    // ScaleMax. Valeur arrrondie à 1000, 50 ou 25. Si l'écart on affiche une valeur exacte.
+    // ScaleMax. Valeur arrrondie à 100, 50 ou 25. Si l'écart on affiche une valeur exacte.
     cout << "hMax = " << hMax << endl;
+
     if(round(hMaxF) != floor(hMinF)){
         scaleMax = round(hMaxF)*100;
     }else{
@@ -205,9 +234,9 @@ int main(int argc, char *argv[])
             scaleMax = hMax;
         }
     }
-
-    coeff = 300.0f/ecart; // l'écart entre valeur min et valeur max s'affiche sur 300 px.
-
+    if(y(scaleMax) < marginY){ // Si avec la valeur maximale arrondie on est hors cadre, on n'arrondi pas
+        scaleMax = hMax;
+    }
     // Dessin du graphe
     dessinHistogramme(resultsObs, im, colors);
 
@@ -251,9 +280,7 @@ int main(int argc, char *argv[])
     int lengthGrandeurDesc = strlen((char*) grandeurDesc);
     gdImageString(im,fonts[4], imgsizeX/2-lengthGrandeurDesc*5, marginY/3, grandeurDesc , noir);
 
-
     // Affichage de la date
-
     string date_jour = date_obs.substr (0,10);
 
     gdImageString(im,fonts[4], imgsizeX/2-date_jour.length()*6, imgsizeY-marginY/2, (unsigned char*) date_jour.c_str(), noir);
