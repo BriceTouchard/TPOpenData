@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FindPkgConfig)
 pkg_check_modules(CURLPP REQUIRED curlpp)
 
-add_executable(hydrometrie3 main.cpp)
+add_executable(hydrometrie3 main.cpp graphe.h graphe.cpp requete.h requete.cpp)
 
 install(TARGETS hydrometrie3
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
