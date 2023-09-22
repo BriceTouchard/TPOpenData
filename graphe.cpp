@@ -85,6 +85,7 @@ unsigned char *Graphe::floatToUcEtoile(float f)
  */
 void Graphe::dessinHistogramme(json jDataObs, gdImagePtr im, vector<int> colors)
 {
+    toString();
     int i=0;
     for (json &result : boost::adaptors::reverse(jDataObs)){   // la requête sort dans l'ordre anti-chronologique, donc on inverse
         h = static_cast<int>(result["resultat_obs"]);
@@ -93,6 +94,7 @@ void Graphe::dessinHistogramme(json jDataObs, gdImagePtr im, vector<int> colors)
 
         // Dessin des barres de l'histogramme
         int x = marginX+(barWidth+spacing)*i;
+        cout << "y(h) = " << y(h) << endl;
         gdImageFilledRectangle(im,x,imgsizeY-marginY,x+barWidth,y(h),colors[2]);
 
         // Formattage de la grandeur (H ou Q) et des heures
@@ -144,6 +146,7 @@ void Graphe::dessinHistogramme(json jDataObs, gdImagePtr im, vector<int> colors)
     boost::replace_all(libelle_site,"é","e");
     boost::replace_all(libelle_site,"è","e");
     boost::replace_all(libelle_site,"ê","e");
+    boost::replace_all(libelle_site,"ô","o");
     unsigned char* titre = (unsigned char*) libelle_site.c_str();
     int lengthTitre = strlen((char*) titre);
     gdImageString(im,gdFontGetGiant(), imgsizeX/2-lengthTitre*5, marginY/2, titre , colors[1]);
@@ -164,23 +167,21 @@ void Graphe::dessinHistogramme(json jDataObs, gdImagePtr im, vector<int> colors)
 }
 
 /**
- * @brief Graphe::dessinGraphe2
+ * @brief Graphe::dessinGraphe2. Top 10 de H ou Q du jour à une heure donnée
  * @param jDataObs
  * @param im
  * @param colors
  */
 void Graphe::dessinGraphe2(json jDataAllVal, gdImagePtr im, vector<int> colors)
 {
-    toString();
     int i = 0;
     for (json &j : jDataAllVal){
-        cout << j["code_station"].get<string>() << " | " << j["resultat_obs"];
-        cout << endl;
+//        cout << j["code_station"].get<string>() << " | " << j["resultat_obs"];
+//        cout << endl;
         h = j["resultat_obs"];
         if(grandeur_hydro == "Q") h=h/100; // conversion en m³/s
 
         int x = marginX+(barWidth+spacing)*i;
-
         gdImageFilledRectangle(im,x,imgsizeY-marginY,x+barWidth,y(h),colors[3]);
 
         // Affichage des valeurs au-dessus des barres et du numéro en abcisse
@@ -193,11 +194,14 @@ void Graphe::dessinGraphe2(json jDataAllVal, gdImagePtr im, vector<int> colors)
 
         // Libellé d'un site pour un code station donné
         Requete r;
-        string reqLibelleSiteByCode = r.request(r.urlBase + "referentiel/stations?code_station=" + j["code_station"].get<string>() + "&fields=libelle_site");
-        cout << endl;
+        string reqLibelleSiteByCode;
+        if(grandeur_hydro == "H"){
+            reqLibelleSiteByCode = r.request(r.urlBase + "referentiel/stations?code_station=" + j["code_station"].get<string>() + "&fields=libelle_site");
+        }else{
+            reqLibelleSiteByCode = r.request(r.urlBase + "referentiel/sites?code_site=" + j["code_site"].get<string>() + "&fields=libelle_site");
+        }
         json jStations = json::parse(reqLibelleSiteByCode);
         json &jDataStations = jStations["data"];
-//        cout << "libelle site n°" << i << " = " << jDataStations[0]["libelle_site"] << endl;
 
         // Affichage du libellé
         string libelle = to_string(i+1) + " " + jDataStations[0]["libelle_site"].get<string>();
@@ -207,6 +211,7 @@ void Graphe::dessinGraphe2(json jDataAllVal, gdImagePtr im, vector<int> colors)
         boost::replace_all(libelle,"é","e");
         boost::replace_all(libelle,"è","e");
         boost::replace_all(libelle,"ê","e");
+        boost::replace_all(libelle,"ô","o");
         gdImageString(im,gdFontGetGiant(),imgsizeX-marginXright,marginY+20*i,(unsigned char*) libelle.c_str(),colors[1]);
         i++;
     }
@@ -274,6 +279,7 @@ void Graphe::makeScale(json jDataObs)
     for (json &result : boost::adaptors::reverse(jDataObs)){
         h = static_cast<int>(result["resultat_obs"]);
         if(grandeur_hydro == "Q") h=h/100; // conversion en m³/s
+        cout << "h = " << h << endl;
         if(h > hMax){
             hMax = h;
         }
@@ -285,7 +291,13 @@ void Graphe::makeScale(json jDataObs)
     }
     cout << "hMin = " << hMin << endl;
     ecart = hMax - hMin;
-    coeff = 300.0f/ecart; // l'écart entre valeur min et valeur max s'affiche sur 300 px.
+
+    if(ecart < 1){
+        coeff = 20;
+        ecart = 50;
+    }else{
+        coeff = 300.0f/ecart; // l'écart entre valeur min et valeur max s'affiche sur 300 px.
+    }
 
     // On calcule les valeurs d'échelle min et max, respectivement scaleMin et scaleMax
     float hMinF = hMin;

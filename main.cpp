@@ -16,11 +16,13 @@
 #include <math.h>
 #include "graphe.h"
 #include "requete.h"
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 using namespace std;
 using json = nlohmann::json;
 using namespace nlohmann::literals;
 using namespace curlpp::options;
+using namespace boost::posix_time;
 
 int main(int argc, char *argv[])
 {
@@ -30,6 +32,7 @@ int main(int argc, char *argv[])
 
     // Message à l'utilisateur s'il a oublié un ou plusieurs arguments
     if(argc < 3) cout << "Veuillez saisir tous les arguments requis : grandeur souhaitée (H ou Q) et le code station. Exemple : H H208000104" << endl;
+    if(argc == 4) g2.date_obs = argv[3];
     g1.grandeur_hydro = argv[1];
     g2.grandeur_hydro = argv[1];
     string code_station = argv[2];
@@ -43,12 +46,26 @@ int main(int argc, char *argv[])
 
     // On crée un json JDataAllVal dans lequel on push back toutes les valeurs (trop de valeurs pour une seule requête)
     json jDataAllVal;
-    g2.date_obs = "2023-09-20T08:00:00Z";
+
+    if(argc < 4){ // si il n'y a pas de date en argument
+        // On prend la date du jour moins 3 heures (délai de maj des opendata)
+        boost::posix_time::ptime timeLocal = boost::posix_time::second_clock::local_time();
+        string timeLocalstr = to_iso_extended_string(timeLocal-hours(3));
+
+        // On ôte les secondes, ce qui est nécessaire pour la requête
+        g2.date_obs = timeLocalstr.substr(0, 16);
+        cout << "g2.date_obs = " << g2.date_obs << endl;;
+     }
 
     vector< string > patternsVect = {"A*", "B*", "D*", "E*", "F*", "G*", "H*", "I*", "J*", "K*", "L*", "M*", "*N",
                                      "O*", "P*", "Q*", "R*", "S*", "U*", "V*", "W*", "X*", "Y*", "Z*"};
     for (string pattern : patternsVect) {
-        json jDataPattern = r.requestData(r.urlBase + "observations_tr?code_entite=" + pattern + "&grandeur_hydro=H&fields=resultat_obs,code_station&date_debut_obs=" + g2.date_obs + "&date_fin_obs=" + g2.date_obs);
+        json jDataPattern;
+        if(g2.grandeur_hydro == "H"){
+            jDataPattern = r.requestData(r.urlBase + "observations_tr?code_entite=" + pattern + "&grandeur_hydro=" + g2.grandeur_hydro + "&fields=resultat_obs,code_station&date_debut_obs=" + g2.date_obs + "&date_fin_obs=" + g2.date_obs);
+        }else{ // avec Q les code_station sont souvent null ...
+            jDataPattern = r.requestData(r.urlBase + "observations_tr?code_entite=" + pattern + "&grandeur_hydro=" + g2.grandeur_hydro + "&fields=resultat_obs,code_site&date_debut_obs=" + g2.date_obs + "&date_fin_obs=" + g2.date_obs);
+        }
         for (int i = 0; i < jDataPattern.size() ; ++i) {
             jDataAllVal.push_back(jDataPattern[i]);
         }
@@ -74,9 +91,11 @@ int main(int argc, char *argv[])
     g1.date_obs = jDataObs[0]["date_obs"];
     g1.libelle_site = jDataLibelleSiteByCode[0]["libelle_site"];
 
-    // Création du nom de fichier (fileName). Exemple : H_H208000104_2023-09-19T08:10:00Z.png
-    string fileNameStr = g1.grandeur_hydro + "_"  + code_station + "_" + g1.date_obs + ".png";
-    const char* fileName = fileNameStr.c_str();
+    // Création du nom de fichier (fileName1). Exemple : H_H208000104_2023-09-19T08:10:00Z.png
+    string fileName1Str = g1.grandeur_hydro + "_"  + code_station + "_" + g1.date_obs + ".png";
+    const char* fileName1 = fileName1Str.c_str();
+    string fileName2Str = "Top10_" + g2.grandeur_hydro + "_" + g2.date_obs + ".png";
+    const char* fileName2 = fileName2Str.c_str();
 
     // On crée les échelles pour les différents graphes
     g1.makeScale(jDataObs);
@@ -115,12 +134,12 @@ int main(int argc, char *argv[])
     g2.dessinGraphe2(jDataAllVal, im2, colorsList);
 
     // Création des fichiers
-    pngout1 = fopen(fileName, "wb");
+    pngout1 = fopen(fileName1, "wb");
     gdImagePng(im1, pngout1);
     fclose(pngout1);
     gdImageDestroy(im1);
 
-    pngout2 = fopen("top10", "wb");
+    pngout2 = fopen(fileName2, "wb");
     gdImagePng(im2, pngout2);
     fclose(pngout2);
     gdImageDestroy(im2);
