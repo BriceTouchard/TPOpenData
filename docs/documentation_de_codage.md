@@ -5,7 +5,7 @@ Voir également les autres documents disponibles :
 
 ## Sommaire
 - [Périmètre du TP](#Périmètre-du-TP)
-- [Open data Hydrométrie Hub'eau](#Open-data-Hydrométrie-Hub'eau)
+- [Open data Hydrométrie Hubeau](#Open-data-Hydrométrie-Hub'eau)
 - [Composants](#Composants)
 - [Architecture du code](#Architecture-du-code)
 - [Principe des requêtes](#Principe-des-requêtes)
