@@ -90,11 +90,9 @@ void Graphe::dessinHistogramme(json jDataObs, gdImagePtr im, vector<int> colors)
     for (json &result : boost::adaptors::reverse(jDataObs)){   // la requête sort dans l'ordre anti-chronologique, donc on inverse
         h = static_cast<int>(result["resultat_obs"]);
         if(grandeur_hydro == "Q") h=h/100; // conversion en m³/s
-        cout << "Hauteur = " << result["resultat_obs"] << " | Date et heure  = " << result["date_obs"].get<string>() << endl;
 
         // Dessin des barres de l'histogramme
         int x = marginX+(barWidth+spacing)*i;
-        cout << "y(h) = " << y(h) << endl;
         gdImageFilledRectangle(im,x,imgsizeY-marginY,x+barWidth,y(h),colors[2]);
 
         // Formattage de la grandeur (H ou Q) et des heures
@@ -126,8 +124,6 @@ void Graphe::dessinHistogramme(json jDataObs, gdImagePtr im, vector<int> colors)
     // Ligne d'échelle min et max
     int yMin =y(scaleMin);
     int yMax =y(scaleMax);
-    cout << "scaleMin = " << scaleMin << " | scaleMax = " << scaleMax << endl;
-    cout << "yMin = " << yMin << " | yMax = " << yMax << endl;
 
     gdImageLine(im,marginX-5,yMin,marginX+5,yMin,colors[1]);
     gdImageLine(im,marginX-5,yMax,marginX+5,yMax,colors[1]);
@@ -176,8 +172,6 @@ void Graphe::dessinGraphe2(json jDataAllVal, gdImagePtr im, vector<int> colors)
 {
     int i = 0;
     for (json &j : jDataAllVal){
-//        cout << j["code_station"].get<string>() << " | " << j["resultat_obs"];
-//        cout << endl;
         h = j["resultat_obs"];
         if(grandeur_hydro == "Q") h=h/100; // conversion en m³/s
 
@@ -232,8 +226,6 @@ void Graphe::dessinGraphe2(json jDataAllVal, gdImagePtr im, vector<int> colors)
     // Ligne d'échelle min et max
     int yMin =y(scaleMin);
     int yMax =y(scaleMax);
-    cout << "scaleMin = " << scaleMin << " | scaleMax = " << scaleMax << endl;
-    cout << "yMin = " << yMin << " | yMax = " << yMax << endl;
 
     gdImageLine(im,marginX-5,yMin,marginX+5,yMin,colors[1]);
     gdImageLine(im,marginX-5,yMax,marginX+5,yMax,colors[1]);
@@ -279,7 +271,6 @@ void Graphe::makeScale(json jDataObs)
     for (json &result : boost::adaptors::reverse(jDataObs)){
         h = static_cast<int>(result["resultat_obs"]);
         if(grandeur_hydro == "Q") h=h/100; // conversion en m³/s
-        cout << "h = " << h << endl;
         if(h > hMax){
             hMax = h;
         }
@@ -289,7 +280,6 @@ void Graphe::makeScale(json jDataObs)
             hMin = h;
         }
     }
-    cout << "hMin = " << hMin << endl;
     ecart = hMax - hMin;
 
     if(ecart < 1){
@@ -311,16 +301,11 @@ void Graphe::makeScale(json jDataObs)
     } else if(round(hMinF) == floor(hMinF)){
         scaleMin = floor(hMinF)*100;
     }
-    cout << "scaleMin = " << scaleMin << endl;
     if(y(scaleMin) > imgsizeY){ // Si avec la valeur minimale arrondie on est hors cadre, on n'arrondi pas
         scaleMin = hMin;
     }
-    cout << "scaleMin = " << scaleMin << endl;
-    cout << "y(scaleMin) = " << y(scaleMin) << " | imgSizeY = " << imgsizeY << endl;
 
     // ScaleMax, valeur d'échellle min. Arrrondie à 100, 50 ou 25 ou une valeur exacte si on est hors cadre.
-    cout << "hMax = " << hMax << endl;
-
     if(round(hMaxF) != floor(hMinF)){
         scaleMax = round(hMaxF)*100;
     }else{

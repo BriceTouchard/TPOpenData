@@ -34,11 +34,11 @@ Référentiel complémentaire à la bibliothèque standard C++.
 Utilisation de l'adaptator reverse, de ptime et de replace_all.
 
 ## Les différents états
-##### Graphiques d’état
+### Graphiques d’état
 - Graphe des 10 plus grandes hauteurs d'eau H à une date et heure donnée.
 - Graphe des 10 plus grands débits Q à à une date et heure donnée.
 
-##### Graphique d’évolution
+### Graphique d’évolution
 - Histogramme des 10 dernières valeurs du débit Q pour une station donnée.
 - Histogramme des 10 dernières valeurs de la hauteur d'eau H pour une station donnée.
 
@@ -52,5 +52,4 @@ Liste non-exhaustive, il y a 5810 stations dans le référentiel.
 | La Seine à Paris			 | F700000103 |   11   |     75      |   10 min    |
 | La Loire à Tours 			 | K490003010 |   24   |     37      |   10 min    |
 | La Garonne à Bordeaux 		 | O972001001 |   75   |     33      |    5 min    |
-
 

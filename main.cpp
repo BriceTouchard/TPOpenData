@@ -54,16 +54,18 @@ int main(int argc, char *argv[])
 
         // On ôte les secondes, ce qui est nécessaire pour la requête
         g2.date_obs = timeLocalstr.substr(0, 16);
-        cout << "g2.date_obs = " << g2.date_obs << endl;;
      }
 
+    /* On effectue 24 requêtes dont on push back les résultats dans un seul json jDataAllVal pour éviter le code 206.
+     * On catégorise les requêtes par la première lettre du code entité, on a donc 24 patterns de recherche
+     * (il n'y a pas de code_entite commençant par C ou T).*/
     vector< string > patternsVect = {"A*", "B*", "D*", "E*", "F*", "G*", "H*", "I*", "J*", "K*", "L*", "M*", "*N",
                                      "O*", "P*", "Q*", "R*", "S*", "U*", "V*", "W*", "X*", "Y*", "Z*"};
     for (string pattern : patternsVect) {
         json jDataPattern;
         if(g2.grandeur_hydro == "H"){
             jDataPattern = r.requestData(r.urlBase + "observations_tr?code_entite=" + pattern + "&grandeur_hydro=" + g2.grandeur_hydro + "&fields=resultat_obs,code_station&date_debut_obs=" + g2.date_obs + "&date_fin_obs=" + g2.date_obs);
-        }else{ // avec Q les code_station sont souvent null ...
+        }else{ // avec Q les code_station sont souvent null, on utilise alors les code_site
             jDataPattern = r.requestData(r.urlBase + "observations_tr?code_entite=" + pattern + "&grandeur_hydro=" + g2.grandeur_hydro + "&fields=resultat_obs,code_site&date_debut_obs=" + g2.date_obs + "&date_fin_obs=" + g2.date_obs);
         }
         for (int i = 0; i < jDataPattern.size() ; ++i) {
@@ -78,10 +80,6 @@ int main(int argc, char *argv[])
 
     // On conserve le top 10 en supprimant toutes les autres valeurs
     jDataAllVal.erase(jDataAllVal.begin()+10, jDataAllVal.end());
-
-    // Affichage console des 10 valeurs
-    cout << "\n--- jDataAllVal ------------------------------" << endl;
-    cout << jDataAllVal << endl;
 
     if(jDataObs.empty()){
         cout << endl;
