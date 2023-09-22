@@ -1,7 +1,7 @@
-# Documentation utilisateur Hydrométrie
+# Documentation utilisateur
 Voir également les autres documents disponibles : 
 - [Documentation de codage](documentation_de_codage.md)
-- [README](README.md)
+- [README](https://github.com/BriceTouchard/TPOpenData/blob/main/README.md)
 
 ### Généralités
 Les type des graphiques :

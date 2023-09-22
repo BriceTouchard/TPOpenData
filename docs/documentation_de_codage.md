@@ -1,7 +1,7 @@
-# Documentation de codage projet Linux embarqué hydrométrie AJC
+# Documentation de codage
 Voir également les autres documents disponibles : 
 - [Documentation utilisateur](documentation_utilisateur.md)
-- [README](README.md)
+- [README](https://github.com/BriceTouchard/TPOpenData/blob/main/README.md)
 
 ### Périmètre du projet
 L'objectif était de créer un programme en C++ qui génère des images de graphes représentant des données régulièrement mise à jour d'une opendata choisie au préalable.
@@ -10,6 +10,7 @@ L'objectif était de créer un programme en C++ qui génère des images de graph
 #### Ressources 
 Site des données de l'API hydrométrie :
 [Hydrométrie | Hubeau](https://hubeau.eaufrance.fr/page/api-hydrometrie)
+
 Le visualiseur permet de chercher un site et de trouver son code station [Démonstrateur Hydrométrie Temps Réel Hub'Eau](https://hubeau.eaufrance.fr/sites/default/files/api/demo/hydro_tr.htm)
 
 #### Présentation 
@@ -56,7 +57,7 @@ Valables pour toutes les adresses
 - `size` : limite la réponse à un nombre d'objets.
 
 Plus de paramètres et plus de détails sont disponibles sur le site [Hydrométrie | Hubeau](https://hubeau.eaufrance.fr/page/api-hydrometrie#console)
-#### Composants
+### Composants
 Ci-dessous la liste des libraries utilisées :
 ##### libcurl 
 Une librairie de transfert de fichier multiprotocol, wrappée par curlpp. Doc : https://curl.se/libcurl/
@@ -70,7 +71,7 @@ Pour la création de graphes au format image. Doc : https://libgd.github.io/
 Référentiel complémentaire à la bibliothèque standard C++. 
 Utilisation de l'adaptator reverse, de ptime et de replace_all.
 
-#### Architecture du code
+### Architecture du code
 Liste des fichiers 
 - main.cpp
 - Classe Requete
@@ -84,12 +85,11 @@ La classe requête contient deux méthodes :
 - `string request(string url);` qui effectue une requête avec l'url de type string en entrée, et renvoie la réponse de type string en sortie. 
 - `json requestData(string url);`  similaire à la méthode précédente, mais qui en plus d'effectuer une requête, parse le résultat en Json et extrait la partie donnée de la réponse qui est renvoyé avec le type `json` implémenté par JSON for modern C++ (nlohmann).
 
-
-#### Principe des requêtes
+### Principe des requêtes
 ##### Graphe 1 : les 10 dernière valeurs 
 *tbd* 24 requêtes.
 
-#### Affichage des graphes
+### Affichage des graphes
 ##### Dimensions
 ```C++
 // Dimensions
@@ -105,7 +105,6 @@ On définit les dimensions utilisées comme montré sur le schéma "schema_dimen
 
 ##### Echelle
 *tbd* Comment est défini l'échelle
-
 
 
 

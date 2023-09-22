@@ -1,6 +1,11 @@
-# TPOpenData
+# Readme TPOpenData
 
 ## Infos
+Deux autres documentations sont disponibles :
+- [Documentation utilisateur](https://github.com/BriceTouchard/TPOpenData/blob/main/docs/documentation_utilisateur.md)
+- [Documentation de codage](https://github.com/BriceTouchard/TPOpenData/blob/main/docs/documentation_de_codage.md)
+
+Il y a deux fichiers exécutables :
 - hydrointel est l'exécutable pour Linux 
 - hydroarm est l'exécutable pour Buildroot
 
@@ -12,11 +17,11 @@
 	- Le projet devra fonctionner sous Linux en mode bureautique mais également sous Buildroot
 
 ## Composants
-### libcurl 
+### Libcurl 
 Une librairie de transfert de fichier multiprotocol, wrappée par curlpp. Doc : https://curl.se/libcurl/
 
-### curlpp
-Un wrapper de libcurl qui permet de créer des requêtes http simplement. Doc : http://www.curlpp.org/
+### Curlpp
+Un wrapper de Libcurl qui permet de créer des requêtes http simplement. Doc : http://www.curlpp.org/
 
 ### Json for modern C++ (JSON nlohmann)
 Permet de faciliter la manipulation des données JSON. Doc : https://json.nlohmann.me/
