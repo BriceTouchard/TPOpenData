@@ -5,14 +5,14 @@ Voir également les autres documents disponibles :
 
 ## Sommaire
 - [Périmètre du TP](#Périmètre-du-TP)
-- [Open data Hydrométrie Hub'eau](#Données-:-open-data-Hydrométrie-Hub'eau)
+- [Open data Hydrométrie Hub'eau](#Open-data-Hydrométrie-Hub'eau)
 - [Composants](#Composants)
 - [Architecture du code](#Architecture-du-code)
 - [Principe des requêtes](#Principe-des-requêtes)
 - [Affichage des graphes](#Affichage-des-graphes)
 - [Compilation](#Compilation)
 - [Lancement](#Lancement)
-- [Jeu de données](Jeu de données)
+- [Jeu de données](Jeu-de-données)
 
 ## Périmètre du TP
 L'objectif était de créer un programme en C++ qui génère des images de graphes représentant des données régulièrement mise à jour d'une opendata choisie au préalable. Le programme doit pouvoir fonctionner sur Linux et sur une configuration Linux embarquée Buildroot/Qemu. 
@@ -127,9 +127,8 @@ int marginY;
 int spacing;
 ```
 On définit les dimensions utilisées comme montré sur le schéma [schema_dimensions.png](schema_dimensions.png). Ce sont les attributs de la classe Graphe, que l'on peut indiquer dans le constructeur lors de l'instanciation. Exemple : `Graphe g1(800,600,50,100,100,100,10);`
-
 ### Echelle
-*tbd* Comment est défini l'échelle
+L'écart entre les valeurs minimales et maximale est représenté dynamiquement sur 300 pixels, afin que la représentation graphique des variations de valeurs soit clairement visible.
 
 ## Compilation
 ### Compilation en ligne de commande 
@@ -157,4 +156,5 @@ Liste non-exhaustive, il y a 5810 stations dans le référentiel. Le [visualiseu
 | La Seine à Paris			 | F700000103 |   11   |     75      |   10 min    |
 | La Loire à Tours 			 | K490003010 |   24   |     37      |   10 min    |
 | La Garonne à Bordeaux 		 | O972001001 |   75   |     33      |    5 min    |
+
 
